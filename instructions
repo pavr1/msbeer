@@ -1,0 +1,18 @@
+Create mode
+1. go mod init msbeer.com
+
+Create docker file
+1. Open pallet and write ctrl+shift+p 'Docker: Add Dockerfile to Workspace'
+2. Select Go language
+3. Select Ports
+4. If alert presented, click on "Add Docker Files"
+
+Build Image
+1. Open pallete and add docker-build, select 'Docker Images: docker image...'
+2. Click enter
+3. Select [project name]:latest
+
+Run Image
+1. Open pallete and write 'Docker Run'
+2. Select image name
+3. select image version (latest)
