@@ -1,6 +1,8 @@
 package application
 
 import (
+	"context"
+
 	"msbeer.com/src/adapter"
 	"msbeer.com/src/infra"
 	"msbeer.com/src/models"
@@ -8,10 +10,10 @@ import (
 
 //BeerApplication Interface
 type BeerApplication interface {
-	SearchBeers() ([]models.BeerItem, error)
-	AddBeers(id int, name, brewery, country string, price float64, currency string) error
-	SearchBeerById(ID int) (models.BeerItem, error)
-	BoxBeerPriceById(ID int, quantity int, currency string) (*models.BeerBox, error)
+	SearchBeers(ctx context.Context) ([]models.BeerItem, error)
+	AddBeers(ctx context.Context, id int, name, brewery, country string, price float64, currency string) error
+	SearchBeerById(ctx context.Context, ID int) (*models.BeerItem, error)
+	BoxBeerPriceById(ctx context.Context, ID int, quantity int, currency string) (*models.BeerBox, error)
 }
 
 //BeerApplicationImpl structure
@@ -29,12 +31,12 @@ func NewApplication(adapter adapter.BeerAdapter, infrastructure infra.BeerInfra)
 }
 
 //SearchBeers searches all list of beers existent in db
-func (a BeerApplicationImpl) SearchBeers() ([]models.BeerItem, error) {
-	return a.Infrastructure.SearchBeers()
+func (a BeerApplicationImpl) SearchBeers(ctx context.Context) ([]models.BeerItem, error) {
+	return a.Infrastructure.SearchBeers(ctx)
 }
 
 //AddBeers adds a brand new beer into db
-func (a BeerApplicationImpl) AddBeers(id int, name, brewery, country string, price float64, currency string) error {
+func (a BeerApplicationImpl) AddBeers(ctx context.Context, id int, name, brewery, country string, price float64, currency string) error {
 	beerItem := models.BeerItem{
 		ID:       id,
 		Name:     name,
@@ -44,16 +46,16 @@ func (a BeerApplicationImpl) AddBeers(id int, name, brewery, country string, pri
 		Currency: currency,
 	}
 
-	return a.Infrastructure.AddBeers(beerItem)
+	return a.Infrastructure.AddBeers(ctx, beerItem)
 }
 
 //SearchBeerById searches a beer by ID
-func (a BeerApplicationImpl) SearchBeerById(ID int) (models.BeerItem, error) {
-	return a.Infrastructure.SearchBeerById(ID)
+func (a BeerApplicationImpl) SearchBeerById(ctx context.Context, ID int) (*models.BeerItem, error) {
+	return a.Infrastructure.SearchBeerById(ctx, ID)
 }
 
 //BoxBeerPriceById searches for box total value by beer ID
-func (a BeerApplicationImpl) BoxBeerPriceById(ID int, quantity int, currency string) (*models.BeerBox, error) {
+func (a BeerApplicationImpl) BoxBeerPriceById(ctx context.Context, ID int, quantity int, currency string) (*models.BeerBox, error) {
 	currencyInfo, err := a.Adapter.GetCurrencyInfo()
 	if err != nil {
 		return nil, err
@@ -64,7 +66,7 @@ func (a BeerApplicationImpl) BoxBeerPriceById(ID int, quantity int, currency str
 		return nil, err
 	}
 
-	beerItem, err := a.Infrastructure.SearchBeerById(ID)
+	beerItem, err := a.Infrastructure.SearchBeerById(ctx, ID)
 	if err != nil {
 		return nil, err
 	}

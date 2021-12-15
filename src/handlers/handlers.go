@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -21,10 +22,10 @@ func NewHandler(app application.BeerApplication) HandlerImpl {
 }
 
 func (h HandlerImpl) HandleSearchBeers(w http.ResponseWriter, r *http.Request) {
-	//ctx := context.Background()
+	ctx := context.Background()
 	w.Header().Set("Content-Type", "application/json")
 
-	beerList, err := h.App.SearchBeers()
+	beerList, err := h.App.SearchBeers(ctx)
 
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
@@ -36,7 +37,7 @@ func (h HandlerImpl) HandleSearchBeers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h HandlerImpl) HandleAddBeers(w http.ResponseWriter, r *http.Request) {
-	//ctx := context.Background()
+	ctx := context.Background()
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -81,7 +82,7 @@ func (h HandlerImpl) HandleAddBeers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.App.AddBeers(id, nameStr, breweryStr, countryStr, price, currencyStr)
+	err = h.App.AddBeers(ctx, id, nameStr, breweryStr, countryStr, price, currencyStr)
 	if err != nil {
 		json.NewEncoder(w).Encode(err.Error())
 		render.Status(r, http.StatusInternalServerError)
@@ -91,7 +92,7 @@ func (h HandlerImpl) HandleAddBeers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h HandlerImpl) HandleSearchBeerById(w http.ResponseWriter, r *http.Request) {
-	//ctx := context.Background()
+	ctx := context.Background()
 	w.Header().Set("Content-Type", "application/json")
 
 	vars := mux.Vars(r)
@@ -104,7 +105,7 @@ func (h HandlerImpl) HandleSearchBeerById(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	beer, err := h.App.SearchBeerById(id)
+	beer, err := h.App.SearchBeerById(ctx, id)
 
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
@@ -116,7 +117,7 @@ func (h HandlerImpl) HandleSearchBeerById(w http.ResponseWriter, r *http.Request
 }
 
 func (h HandlerImpl) HandleBoxBeerPriceById(w http.ResponseWriter, r *http.Request) {
-	//ctx := context.Background()
+	ctx := context.Background()
 	w.Header().Set("Content-Type", "application/json")
 
 	vars := mux.Vars(r)
@@ -137,7 +138,7 @@ func (h HandlerImpl) HandleBoxBeerPriceById(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	beer, err := h.App.BoxBeerPriceById(id, quantity, currencyStr)
+	beer, err := h.App.BoxBeerPriceById(ctx, id, quantity, currencyStr)
 
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)

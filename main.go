@@ -17,7 +17,10 @@ func main() {
 	config := models.NewConfig()
 	httpClient := http.Client{}
 	adapter := adapter.NewBeerAdapter(fmt.Sprintf(config.CurrencyURL, config.CurrencyToken), &httpClient)
-	infra := infra.NewBeerInfraImpl()
+	infra, err := infra.NewBeerInfraImpl()
+	if err != nil {
+		panic(err)
+	}
 	app := application.NewApplication(adapter, infra)
 	handler := handlers.NewHandler(app)
 
