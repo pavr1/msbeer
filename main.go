@@ -25,8 +25,7 @@ func main() {
 	handler := handlers.NewHandler(app)
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/beers", handler.HandleSearchBeers)
-	router.HandleFunc("/beers", handler.HandleAddBeers).Methods("POST")
+	router.HandleFunc("/beers", handler.HandleBeers).Methods("GET", "POST")
 	router.HandleFunc("/beers/{beerID}", handler.HandleSearchBeerById)
 	router.HandleFunc("/beers/{beerID}/boxprice", handler.HandleBoxBeerPriceById)
 

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strconv"
 
 	_ "github.com/denisenkom/go-mssqldb"
 	"msbeer.com/src/models"
@@ -22,7 +21,8 @@ type BeerInfraImpl struct {
 }
 
 func NewBeerInfraImpl() (BeerInfra, error) {
-	connectionString := fmt.Sprintf("Server=localhost;Database=%s;Trusted_Connection=True;", "msbeer")
+	connectionString := "server=PAVILLALOBOS;user id=;trusted_connection=true;database=msbeer;app name=msbeer"
+	//fmt.Sprintf("Server=localhost;user id=;Database=%s;Trusted_Connection=True;", "msbeer")
 
 	sqlObj, err := sql.Open("mssql", connectionString)
 	if err != nil {
@@ -39,7 +39,7 @@ func NewBeerInfraImpl() (BeerInfra, error) {
 //SearchBeers searches all list of beers existent in db
 func (a BeerInfraImpl) SearchBeers(ctx context.Context) ([]models.BeerItem, error) {
 	result := []models.BeerItem{}
-	statement := "SELECT (ID, Name, Brewery, Country, Price, Currency) FROM beer_item"
+	statement := "SELECT ID, Name, Brewery, Country, Price, Currency FROM beer_item"
 
 	rows, err := a.retrieve(ctx, statement)
 	if err != nil {
@@ -71,22 +71,25 @@ func (a BeerInfraImpl) SearchBeers(ctx context.Context) ([]models.BeerItem, erro
 
 //AddBeers adds a brand new beer into db
 func (a BeerInfraImpl) AddBeers(ctx context.Context, beer models.BeerItem) error {
-	statement := "INSERT INTO beer_item(ID, Name, Brewery, Country, Price, Currency) VALUES (@ID, @Name, @Brewery, @Country, @Price, @Currency)"
-	args := make(map[string]string)
-	args["ID"] = strconv.Itoa(beer.ID)
-	args["Name"] = beer.Name
-	args["Brewery"] = beer.Brewery
-	args["Country"] = beer.Country
-	args["Price"] = fmt.Sprintf("%f", beer.Price)
-	args["Currency"] = beer.Currency
+	statement := fmt.Sprintf("INSERT INTO beer_item(ID, Name, Brewery, Country, Price, Currency) VALUES (%d, '%s', '%s', '%s', %v, '%s')",
+		beer.ID,
+		beer.Name,
+		beer.Brewery,
+		beer.Country,
+		beer.Price,
+		beer.Currency)
 
-	a.execute(ctx, statement, args)
+	err := a.execute(ctx, statement)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 //SearchBeerById searches a beer by ID
 func (a BeerInfraImpl) SearchBeerById(ctx context.Context, ID int) (*models.BeerItem, error) {
-	statement := fmt.Sprintf("SELECT (ID, Name, Brewery, Country, Price, Currency) FROM beer_item WHERE ID=%d", ID)
+	statement := fmt.Sprintf("SELECT ID, Name, Brewery, Country, Price, Currency FROM beer_item WHERE ID=%d", ID)
 
 	rows, err := a.retrieve(ctx, statement)
 	if err != nil {
@@ -119,46 +122,34 @@ func (a BeerInfraImpl) SearchBeerById(ctx context.Context, ID int) (*models.Beer
 	return nil, errors.New("No records found")
 }
 
-func (i BeerInfraImpl) execute(ctx context.Context, sqlStatement string, args map[string]string) (int64, error) {
+func (i BeerInfraImpl) execute(ctx context.Context, sqlStatement string) error {
 	var err error
 
 	err = i.db.PingContext(ctx)
 	if err != nil {
-		return -1, err
+		return err
 	}
-
-	sqlStatement += `
-		select isNull(SCOPE_IDENTITY(), -1);
-	`
 
 	query, err := i.db.Prepare(sqlStatement)
 	if err != nil {
-		return -1, err
+		return err
 	}
 
 	defer query.Close()
-
-	argsArray := []sql.NamedArg{}
-	for n, v := range args {
-		argsArray = append(argsArray, sql.NamedArg{
-			Name:  n,
-			Value: v,
-		})
-	}
-
-	newRecord := query.QueryRowContext(ctx, argsArray)
+	newRecord := query.QueryRowContext(ctx)
 
 	var newID int64
 	err = newRecord.Scan(&newID)
 	if err != nil {
-		return -1, err
+		return err
 	}
 
-	return newID, nil
+	return nil
 }
 
 func (i BeerInfraImpl) retrieve(ctx context.Context, statement string) (*sql.Rows, error) {
-	err := i.db.PingContext(ctx)
+	ctx1 := context.Background()
+	err := i.db.PingContext(ctx1)
 	if err != nil {
 		return nil, err
 	}

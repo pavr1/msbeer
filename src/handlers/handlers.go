@@ -3,13 +3,44 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/render"
 	"github.com/gorilla/mux"
 	"msbeer.com/src/application"
+	"msbeer.com/src/models"
 )
+
+type CustomRenderer struct {
+	StatusCode int
+	Status     string
+	Data       interface{}
+}
+
+func (c CustomRenderer) Render(w http.ResponseWriter, r *http.Request) error {
+	render.Status(r, c.StatusCode)
+	render.Respond(w, r, c)
+
+	return nil
+}
+
+func NewRenderer(statusCode int, err error, data interface{}) render.Renderer {
+	status := ""
+	if err != nil {
+		status = err.Error()
+	} else {
+		status = "Ok"
+	}
+
+	return CustomRenderer{
+		StatusCode: statusCode,
+		Status:     status,
+		Data:       data,
+	}
+}
 
 type HandlerImpl struct {
 	App application.BeerApplication
@@ -21,73 +52,87 @@ func NewHandler(app application.BeerApplication) HandlerImpl {
 	}
 }
 
-func (h HandlerImpl) HandleSearchBeers(w http.ResponseWriter, r *http.Request) {
+func (h HandlerImpl) HandleBeers(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	w.Header().Set("Content-Type", "application/json")
 
-	beerList, err := h.App.SearchBeers(ctx)
+	switch r.Method {
+	case "GET":
+		list, err := h.App.SearchBeers(ctx)
 
-	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-	} else {
-		json.NewEncoder(w).Encode(beerList)
+		if err != nil {
+			render := NewRenderer(http.StatusInternalServerError, err, nil)
+			render.Render(w, r)
+		} else {
+			render := NewRenderer(http.StatusOK, nil, list)
+			render.Render(w, r)
+		}
+	case "POST":
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			render := NewRenderer(http.StatusInternalServerError, err, nil)
+			render.Render(w, r)
+			return
+		}
 
-		render.Status(r, http.StatusOK)
-	}
-}
+		var beer models.BeerItem
+		err = json.Unmarshal(b, &beer)
+		if err != nil {
+			render := NewRenderer(http.StatusInternalServerError, err, nil)
+			render.Render(w, r)
+			return
+		}
 
-func (h HandlerImpl) HandleAddBeers(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+		result, err := h.App.SearchBeerById(ctx, beer.ID)
+		if err != nil {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("error while validating beer existance"), nil)
+			render.Render(w, r)
+			return
+		}
+		if result != nil {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("id value already existent, please change id"), nil)
+			render.Render(w, r)
+			return
+		}
 
-	w.Header().Set("Content-Type", "application/json")
+		if beer.ID <= 0 {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid id value"), nil)
+			render.Render(w, r)
+			return
+		}
+		if beer.Name == "" {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty name value"), nil)
+			render.Render(w, r)
+			return
+		}
+		if beer.Brewery == "" {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty brewery value"), nil)
+			render.Render(w, r)
+			return
+		}
+		if beer.Country == "" {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty country value"), nil)
+			render.Render(w, r)
+			return
+		}
+		if beer.Price == 0 {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid price value"), nil)
+			render.Render(w, r)
+			return
+		}
+		if beer.Currency == "" {
+			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty currency value"), nil)
+			render.Render(w, r)
+			return
+		}
 
-	vars := mux.Vars(r)
-	idStr := vars["ID"]
-	nameStr := vars["Name"]
-	breweryStr := vars["Brewery"]
-	countryStr := vars["Country"]
-	priceStr := vars["Price"]
-	currencyStr := vars["Currency"]
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		json.NewEncoder(w).Encode("Invalid ID value")
-		render.Status(r, http.StatusInternalServerError)
-		return
-	}
-	if nameStr == "" {
-		json.NewEncoder(w).Encode("Invalid empty name")
-		render.Status(r, http.StatusInternalServerError)
-		return
-	}
-	if breweryStr == "" {
-		json.NewEncoder(w).Encode("Invalid empty brewery")
-		render.Status(r, http.StatusInternalServerError)
-		return
-	}
-	if countryStr == "" {
-		json.NewEncoder(w).Encode("Invalid empty country")
-		render.Status(r, http.StatusInternalServerError)
-		return
-	}
-	price, err := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
-		json.NewEncoder(w).Encode("Invalid Price value")
-		render.Status(r, http.StatusInternalServerError)
-		return
-	}
-	if currencyStr == "" {
-		json.NewEncoder(w).Encode("Invalid empty currency")
-		render.Status(r, http.StatusInternalServerError)
-		return
-	}
-
-	err = h.App.AddBeers(ctx, id, nameStr, breweryStr, countryStr, price, currencyStr)
-	if err != nil {
-		json.NewEncoder(w).Encode(err.Error())
-		render.Status(r, http.StatusInternalServerError)
-	} else {
-		render.Status(r, http.StatusOK)
+		err = h.App.AddBeers(ctx, beer)
+		if err != nil {
+			json.NewEncoder(w).Encode(err.Error())
+			render.Status(r, http.StatusInternalServerError)
+		} else {
+			render.Status(r, http.StatusOK)
+		}
 	}
 }
 

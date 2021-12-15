@@ -11,7 +11,7 @@ import (
 //BeerApplication Interface
 type BeerApplication interface {
 	SearchBeers(ctx context.Context) ([]models.BeerItem, error)
-	AddBeers(ctx context.Context, id int, name, brewery, country string, price float64, currency string) error
+	AddBeers(ctx context.Context, beerItem models.BeerItem) error
 	SearchBeerById(ctx context.Context, ID int) (*models.BeerItem, error)
 	BoxBeerPriceById(ctx context.Context, ID int, quantity int, currency string) (*models.BeerBox, error)
 }
@@ -36,16 +36,7 @@ func (a BeerApplicationImpl) SearchBeers(ctx context.Context) ([]models.BeerItem
 }
 
 //AddBeers adds a brand new beer into db
-func (a BeerApplicationImpl) AddBeers(ctx context.Context, id int, name, brewery, country string, price float64, currency string) error {
-	beerItem := models.BeerItem{
-		ID:       id,
-		Name:     name,
-		Brewery:  brewery,
-		Country:  country,
-		Price:    price,
-		Currency: currency,
-	}
-
+func (a BeerApplicationImpl) AddBeers(ctx context.Context, beerItem models.BeerItem) error {
 	return a.Infrastructure.AddBeers(ctx, beerItem)
 }
 
