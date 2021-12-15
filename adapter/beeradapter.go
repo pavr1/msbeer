@@ -1,6 +1,8 @@
 package adapter
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"msbeer.com/models"
@@ -30,17 +32,16 @@ func (a BeerAdapterImpl) GetCurrencyInfo() (*models.Currency, error) {
 
 	defer resp.Body.Close()
 
-	return nil, nil
-	// body, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	// currency := models.Currency{}
-	// err = json.Unmarshal(body, &currency)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	currency := models.Currency{}
+	err = json.Unmarshal(body, &currency)
+	if err != nil {
+		return nil, err
+	}
 
-	// return &currency, nil
+	return &currency, nil
 }
