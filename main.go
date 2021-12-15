@@ -6,11 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"msbeer.com/adapter"
-	"msbeer.com/application"
-	"msbeer.com/handlers"
-	"msbeer.com/infra"
-	"msbeer.com/models"
+	"msbeer.com/src/adapter"
+	"msbeer.com/src/application"
+	"msbeer.com/src/handlers"
+	"msbeer.com/src/infra"
+	"msbeer.com/src/models"
 )
 
 func main() {

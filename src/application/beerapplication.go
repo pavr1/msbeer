@@ -1,9 +1,9 @@
 package application
 
 import (
-	"msbeer.com/adapter"
-	"msbeer.com/infra"
-	"msbeer.com/models"
+	"msbeer.com/src/adapter"
+	"msbeer.com/src/infra"
+	"msbeer.com/src/models"
 )
 
 //BeerApplication Interface

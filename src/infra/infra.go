@@ -1,7 +1,9 @@
 package infra
 
 import (
-	"msbeer.com/models"
+	// "database/sql"
+
+	"msbeer.com/src/models"
 )
 
 type BeerInfra interface {
@@ -11,10 +13,20 @@ type BeerInfra interface {
 }
 
 type BeerInfraImpl struct {
+	//db *sql.DB
 }
 
-func NewBeerInfraImpl() BeerInfra {
-	return BeerInfraImpl{}
+func NewBeerInfraImpl() (BeerInfra, error) {
+	// database, err := sql.Open("sqlite3", "./bogo.db")
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// fmt.Println(database)
+	// return BeerInfraImpl{
+	// 	db: database,
+	// }, nil
+	return nil, nil
 }
 
 //SearchBeers searches all list of beers existent in db

@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/gorilla/mux"
-	"msbeer.com/application"
+	"msbeer.com/src/application"
 )
 
 type HandlerImpl struct {

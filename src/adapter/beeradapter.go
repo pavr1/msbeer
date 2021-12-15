@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"msbeer.com/models"
+	"msbeer.com/src/models"
 )
 
 type BeerAdapter interface {

@@ -16,3 +16,8 @@ Run Image
 1. Open pallete and write 'Docker Run'
 2. Select image name
 3. select image version (latest)
+
+Elastic Search Image
+1. docker pull elasticsearch
+2. docker run -p 127.0.0.1:9200:9200 -p 127.0.0.1:9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+3. docker-compose up //bring up the cluster
