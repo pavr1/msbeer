@@ -1,16 +1,32 @@
-#build stage
-FROM golang:alpine AS builder
-RUN apk add --no-cache git
-WORKDIR /go/src/app
-RUN export GO111Modules=on
-COPY . .
-RUN go get -d -v ./...
-RUN go build -o /go/bin/app -v ./...
+FROM golang:1.12-alpine AS build_base
 
-#final stage
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-COPY --from=builder /go/bin/app /app
-ENTRYPOINT /app
-LABEL Name=msbeer Version=0.0.1
+RUN apk add --no-cache git
+
+# Set the Current Working Directory inside the container
+WORKDIR /tmp/go-sample-app
+
+# We want to populate the module cache based on the go.{mod,sum} files.
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+# Unit tests
+# RUN CGO_ENABLED=0 go test -v
+
+# Build the Go app
+RUN go build -o ./out/go-sample-app .
+
+# Start fresh from a smaller image
+FROM alpine:3.9 
+RUN apk add ca-certificates
+
+COPY --from=build_base /tmp/go-sample-app/out/go-sample-app /app/go-sample-app
+
+# This container exposes port 3000 to the outside world
 EXPOSE 3000
+
+# Run the binary program produced by `go install`
+CMD ["/app/go-sample-app"]

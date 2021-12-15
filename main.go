@@ -1,40 +1,33 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"msbeer.com/adapter"
+	"msbeer.com/application"
+	"msbeer.com/handlers"
+	"msbeer.com/infra"
+	"msbeer.com/models"
 )
 
-func searchBeers(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World"))
-}
-
-func addBeers(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World"))
-}
-
-func searchBeerById(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key := vars["beerID"]
-	w.Write([]byte("Hello World " + key))
-}
-
-func boxBeerPriceById(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key := vars["beerID"]
-	w.Write([]byte("Hello World " + key))
-}
-
 func main() {
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/beers", searchBeers)
-	router.HandleFunc("/beers", addBeers).Methods("POST")
-	router.HandleFunc("/beers/{beerID}", searchBeerById)
-	router.HandleFunc("/beers/{beerID}/boxprice", boxBeerPriceById)
+	config := models.NewConfig()
+	httpClient := http.Client{}
+	adapter := adapter.NewBeerAdapter(fmt.Sprintf(config.CurrencyURL, config.CurrencyToken), &httpClient)
+	infra := infra.NewBeerInfraImpl()
+	app := application.NewApplication(adapter, infra)
+	handler := handlers.NewHandler(app)
 
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/beers", handler.HandleSearchBeers)
+	router.HandleFunc("/beers", handler.HandleAddBeers).Methods("POST")
+	router.HandleFunc("/beers/{beerID}", handler.HandleSearchBeerById)
+	router.HandleFunc("/beers/{beerID}/boxprice", handler.HandleBoxBeerPriceById)
+
+	if err := http.ListenAndServe(":3000", router); err != nil {
 		log.Fatalln("ListenAndServer Error", err)
 	}
 }

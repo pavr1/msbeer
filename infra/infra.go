@@ -6,7 +6,7 @@ import (
 
 type BeerInfra interface {
 	SearchBeers() ([]models.BeerItem, error)
-	AddBeers() error
+	AddBeers(models.BeerItem) error
 	SearchBeerById(ID int) (models.BeerItem, error)
 }
 
@@ -23,7 +23,7 @@ func (a BeerInfraImpl) SearchBeers() ([]models.BeerItem, error) {
 }
 
 //AddBeers adds a brand new beer into db
-func (a BeerInfraImpl) AddBeers() error {
+func (a BeerInfraImpl) AddBeers(beer models.BeerItem) error {
 	return nil
 }
 
