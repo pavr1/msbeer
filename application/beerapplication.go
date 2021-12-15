@@ -11,7 +11,7 @@ type BeerApplication interface {
 	SearchBeers() ([]models.BeerItem, error)
 	AddBeers() error
 	SearchBeerById(ID int) (models.BeerItem, error)
-	BoxBeerPriceById(ID int) (models.BeerBox, error)
+	BoxBeerPriceById(ID int, quantity int, currency string) (*models.BeerBox, error)
 }
 
 //BeerApplicationImpl structure
@@ -44,6 +44,25 @@ func (a BeerApplicationImpl) SearchBeerById(ID int) (models.BeerItem, error) {
 }
 
 //BoxBeerPriceById searches for box total value by beer ID
-func (a BeerApplicationImpl) BoxBeerPriceById(ID int) (models.BeerBox, error) {
-	return models.BeerBox{}, nil
+func (a BeerApplicationImpl) BoxBeerPriceById(ID int, quantity int, currency string) (*models.BeerBox, error) {
+	currencyInfo, err := a.Adapter.GetCurrencyInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	currencyValue, err := currencyInfo.GetCurrentValue(currency)
+	if err != nil {
+		return nil, err
+	}
+
+	beerItem, err := a.Infrastructure.SearchBeerById(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalAmount := (beerItem.Price * float64(quantity)) * currencyValue
+
+	return &models.BeerBox{
+		PriceTotal: totalAmount,
+	}, nil
 }
