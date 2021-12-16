@@ -3,7 +3,6 @@ package infra
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -17,20 +16,13 @@ type BeerInfra interface {
 }
 
 type BeerInfraImpl struct {
-	db *sql.DB
+	db   *sql.DB
+	conn DbConnector
 }
 
-func NewBeerInfraImpl() (BeerInfra, error) {
-	connectionString := "server=PAVILLALOBOS;user id=;trusted_connection=true;database=msbeer;app name=msbeer"
-	//fmt.Sprintf("Server=localhost;user id=;Database=%s;Trusted_Connection=True;", "msbeer")
-
-	sqlObj, err := sql.Open("mssql", connectionString)
-	if err != nil {
-		return nil, err
-	}
-
+func NewBeerInfraImpl(db *sql.DB, conn DbConnector) (BeerInfra, error) {
 	beerInfra := BeerInfraImpl{
-		db: sqlObj,
+		db: db,
 	}
 
 	return beerInfra, nil
@@ -41,7 +33,7 @@ func (a BeerInfraImpl) SearchBeers(ctx context.Context) ([]models.BeerItem, erro
 	result := []models.BeerItem{}
 	statement := "SELECT ID, Name, Brewery, Country, Price, Currency FROM beer_item"
 
-	rows, err := a.retrieve(ctx, statement)
+	rows, err := a.conn.Retrieve(ctx, a.db, statement)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +71,7 @@ func (a BeerInfraImpl) AddBeers(ctx context.Context, beer models.BeerItem) error
 		beer.Price,
 		beer.Currency)
 
-	err := a.execute(ctx, statement)
+	err := a.conn.Execute(ctx, a.db, statement)
 	if err != nil {
 		return err
 	}
@@ -91,7 +83,7 @@ func (a BeerInfraImpl) AddBeers(ctx context.Context, beer models.BeerItem) error
 func (a BeerInfraImpl) SearchBeerById(ctx context.Context, ID int) (*models.BeerItem, error) {
 	statement := fmt.Sprintf("SELECT ID, Name, Brewery, Country, Price, Currency FROM beer_item WHERE ID=%d", ID)
 
-	rows, err := a.retrieve(ctx, statement)
+	rows, err := a.conn.Retrieve(ctx, a.db, statement)
 	if err != nil {
 		return nil, err
 	}
@@ -116,48 +108,8 @@ func (a BeerInfraImpl) SearchBeerById(ctx context.Context, ID int) (*models.Beer
 			Currency: currency,
 		}
 
-		return result, nil
+		break
 	}
 
-	return nil, errors.New("No records found")
-}
-
-func (i BeerInfraImpl) execute(ctx context.Context, sqlStatement string) error {
-	var err error
-
-	err = i.db.PingContext(ctx)
-	if err != nil {
-		return err
-	}
-
-	query, err := i.db.Prepare(sqlStatement)
-	if err != nil {
-		return err
-	}
-
-	defer query.Close()
-	newRecord := query.QueryRowContext(ctx)
-
-	var newID int64
-	err = newRecord.Scan(&newID)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (i BeerInfraImpl) retrieve(ctx context.Context, statement string) (*sql.Rows, error) {
-	ctx1 := context.Background()
-	err := i.db.PingContext(ctx1)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := i.db.QueryContext(ctx, statement)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
+	return result, nil
 }

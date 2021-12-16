@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,7 +18,16 @@ func main() {
 	config := models.NewConfig()
 	httpClient := http.Client{}
 	adapter := adapter.NewBeerAdapter(fmt.Sprintf(config.CurrencyURL, config.CurrencyToken), &httpClient)
-	infra, err := infra.NewBeerInfraImpl()
+
+	connectionString := config.DbConnectionString
+
+	sqlObj, err := sql.Open(config.DbProvider, connectionString)
+	if err != nil {
+		panic(err)
+	}
+	conn := infra.NewDbConnectorImpl()
+
+	infra, err := infra.NewBeerInfraImpl(sqlObj, conn)
 	if err != nil {
 		panic(err)
 	}

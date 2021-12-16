@@ -6,12 +6,12 @@ require github.com/gorilla/mux v1.8.0
 
 require (
 	github.com/go-chi/render v1.0.1
-	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/stretchr/testify v1.7.0
 )
 
 require (
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
+	github.com/stretchr/objx v0.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c // indirect
 )
 
