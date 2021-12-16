@@ -3,6 +3,7 @@ package infra
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	_ "github.com/denisenkom/go-mssqldb"
@@ -22,7 +23,8 @@ type BeerInfraImpl struct {
 
 func NewBeerInfraImpl(db *sql.DB, conn DbConnector) (BeerInfra, error) {
 	beerInfra := BeerInfraImpl{
-		db: db,
+		db:   db,
+		conn: conn,
 	}
 
 	return beerInfra, nil
@@ -30,35 +32,14 @@ func NewBeerInfraImpl(db *sql.DB, conn DbConnector) (BeerInfra, error) {
 
 //SearchBeers searches all list of beers existent in db
 func (a BeerInfraImpl) SearchBeers(ctx context.Context) ([]models.BeerItem, error) {
-	result := []models.BeerItem{}
 	statement := "SELECT ID, Name, Brewery, Country, Price, Currency FROM beer_item"
 
-	rows, err := a.conn.Retrieve(ctx, a.db, statement)
+	items, err := a.conn.Retrieve(ctx, a.db, statement)
 	if err != nil {
 		return nil, err
 	}
 
-	for rows.Next() {
-		var name, brewery, country, currency string
-		var id int
-		var price float64
-
-		err = rows.Scan(&id, &name, &brewery, &country, &price, &currency)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, models.BeerItem{
-			ID:       id,
-			Name:     name,
-			Brewery:  brewery,
-			Country:  country,
-			Price:    price,
-			Currency: currency,
-		})
-	}
-
-	return result, nil
+	return items, nil
 }
 
 //AddBeers adds a brand new beer into db
@@ -83,33 +64,14 @@ func (a BeerInfraImpl) AddBeers(ctx context.Context, beer models.BeerItem) error
 func (a BeerInfraImpl) SearchBeerById(ctx context.Context, ID int) (*models.BeerItem, error) {
 	statement := fmt.Sprintf("SELECT ID, Name, Brewery, Country, Price, Currency FROM beer_item WHERE ID=%d", ID)
 
-	rows, err := a.conn.Retrieve(ctx, a.db, statement)
+	beerItems, err := a.conn.Retrieve(ctx, a.db, statement)
 	if err != nil {
 		return nil, err
 	}
 
-	var result *models.BeerItem
-	for rows.Next() {
-		var name, brewery, country, currency string
-		var id int
-		var price float64
-
-		err = rows.Scan(&id, &name, &brewery, &country, &price, &currency)
-		if err != nil {
-			return nil, err
-		}
-
-		result = &models.BeerItem{
-			ID:       id,
-			Name:     name,
-			Brewery:  brewery,
-			Country:  country,
-			Price:    price,
-			Currency: currency,
-		}
-
-		break
+	if len(beerItems) == 0 {
+		return nil, errors.New("no items found")
 	}
 
-	return result, nil
+	return &beerItems[0], nil
 }

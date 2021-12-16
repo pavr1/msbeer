@@ -3,11 +3,13 @@ package infra
 import (
 	"context"
 	"database/sql"
+
+	"msbeer.com/src/models"
 )
 
 type DbConnector interface {
 	Execute(ctx context.Context, db *sql.DB, sqlStatement string) error
-	Retrieve(ctx context.Context, db *sql.DB, statement string) (*sql.Rows, error)
+	Retrieve(ctx context.Context, db *sql.DB, statement string) ([]models.BeerItem, error)
 }
 
 type DbConnectorImpl struct {
@@ -42,17 +44,39 @@ func (DbConnectorImpl) Execute(ctx context.Context, db *sql.DB, sqlStatement str
 	return nil
 }
 
-func (DbConnectorImpl) Retrieve(ctx context.Context, db *sql.DB, statement string) (*sql.Rows, error) {
+func (DbConnectorImpl) Retrieve(ctx context.Context, db *sql.DB, statement string) ([]models.BeerItem, error) {
 	ctx1 := context.Background()
 	err := db.PingContext(ctx1)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := db.QueryContext(ctx, statement)
+	rows, err := db.QueryContext(ctx, statement)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	result := []models.BeerItem{}
+
+	for rows.Next() {
+		var name, brewery, country, currency string
+		var id int
+		var price float64
+
+		err = rows.Scan(&id, &name, &brewery, &country, &price, &currency)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, models.BeerItem{
+			ID:       id,
+			Name:     name,
+			Brewery:  brewery,
+			Country:  country,
+			Price:    price,
+			Currency: currency,
+		})
+	}
+
+	return result, nil
 }
