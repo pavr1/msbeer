@@ -84,54 +84,45 @@ func (h HandlerImpl) HandleBeers(w http.ResponseWriter, r *http.Request) {
 		}
 
 		result, err := h.App.SearchBeerById(ctx, beer.ID)
+		var customErrorMsg string
 		if err != nil {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("error while validating beer existance"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "error while validating beer existance"
 		}
 		if result != nil {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("id value already existent, please change id"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "cannot insert, beer already exists for that id"
 		}
-
 		if beer.ID <= 0 {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid id value"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "invalid id value"
 		}
 		if beer.Name == "" {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty name value"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "invalid empty name value"
 		}
 		if beer.Brewery == "" {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty brewery value"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "invalid empty brewery value"
 		}
 		if beer.Country == "" {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty country value"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "invalid empty country value"
 		}
 		if beer.Price == 0 {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid price value"), nil)
-			render.Render(w, r)
-			return
+			customErrorMsg = "invalid price value"
 		}
 		if beer.Currency == "" {
-			render := NewRenderer(http.StatusInternalServerError, errors.New("invalid empty currency value"), nil)
+			customErrorMsg = "invalid empty currency value"
+		}
+
+		if customErrorMsg != "" {
+			render := NewRenderer(http.StatusInternalServerError, errors.New(customErrorMsg), nil)
 			render.Render(w, r)
 			return
 		}
 
 		err = h.App.AddBeers(ctx, beer)
 		if err != nil {
-			json.NewEncoder(w).Encode(err.Error())
-			render.Status(r, http.StatusInternalServerError)
+			render := NewRenderer(http.StatusInternalServerError, errors.New(customErrorMsg), nil)
+			render.Render(w, r)
 		} else {
-			render.Status(r, http.StatusOK)
+			render := NewRenderer(http.StatusOK, nil, nil)
+			render.Render(w, r)
 		}
 	}
 }
